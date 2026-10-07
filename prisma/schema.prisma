@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IssueStatus {
+  ISSUED
+  RETURNED
+  OVERDUE
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  @@map("admins")
+}
+
+model Student {
+  id         String   @id @default(cuid())
+  studentId  String   @unique
+  name       String
+  email      String   @unique
+  phone      String
+  department String
+  year       Int
+  createdAt  DateTime @default(now())
+  issues     Issue[]
+
+  @@index([studentId])
+  @@map("students")
+}
+
+model Book {
+  id              String   @id @default(cuid())
+  title           String
+  author          String
+  isbn            String   @unique
+  category        String
+  totalCopies     Int
+  availableCopies Int
+  shelfLocation   String
+  coverUrl        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  issues          Issue[]
+
+  @@index([isbn])
+  @@index([category])
+  @@map("books")
+}
+
+model Issue {
+  id         String      @id @default(cuid())
+  bookId     String
+  studentId  String
+  issueDate  DateTime    @default(now())
+  dueDate    DateTime
+  returnDate DateTime?
+  status     IssueStatus @default(ISSUED)
+  fine       Int         @default(0)
+  createdAt  DateTime    @default(now())
+
+  book    Book    @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([bookId])
+  @@index([studentId])
+  @@map("issues")
+}
